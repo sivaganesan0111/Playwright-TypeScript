@@ -27,16 +27,11 @@ export default defineConfig({
   ],
 
   use: {
-    channel: 'chrome',
-
-    headless: false,
-
+    channel: process.env.CI ? undefined : 'chrome',
+    headless: !!process.env.CI,
     viewport: null,
-
     screenshot: 'on',
-
     trace: 'retain-on-failure',
-
     launchOptions: {
       args: ['--start-maximized']
     }
