@@ -48,11 +48,13 @@ export class PersonalDetailsPage {
     await expect(locator).toHaveValue(value);
   }
 
-  async selectGender(): Promise<void> {
-    await this.waitForLoader();
-    await this.maleRadio.check();
-    await expect(this.maleRadio).toBeChecked();
-  }
+    async selectGender(): Promise<void> {
+        await this.waitForLoader();
+
+        await this.page.getByText('Male', { exact: true }).click();
+
+        await expect(this.maleRadio).toBeChecked();
+    }
 
   async clickSave(): Promise<void> {
     await this.waitForLoader();
