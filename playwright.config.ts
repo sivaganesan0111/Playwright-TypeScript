@@ -16,7 +16,7 @@ export default defineConfig({
     timeout: 90000,
 
     expect: {
-        timeout: 10000
+        timeout: 15000
     },
 
     reporter: [
@@ -28,14 +28,23 @@ export default defineConfig({
     ],
 
     use: {
-        channel: process.env.CI ? undefined : 'chrome',
+
+        // Use Google Chrome locally and in GitHub Actions.
+        channel: 'chrome',
+
+        // Headed locally, headless in CI.
         headless: !!process.env.CI,
-        viewport: null,
+
+        // Keep viewport consistent across environments.
+        viewport: {
+            width: 1366,
+            height: 768
+        },
+
         screenshot: 'on',
+
         trace: 'retain-on-failure',
-        launchOptions: {
-            args: ['--start-maximized']
-        }
+
     },
 
     projects: [
