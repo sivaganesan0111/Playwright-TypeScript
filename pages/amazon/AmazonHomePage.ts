@@ -4,14 +4,18 @@ import { expect, Locator, Page } from '@playwright/test';
 export class AmazonHomePage {
 
     private readonly searchBox: Locator;
+    private readonly continueShoppingButton: Locator;
 
     constructor(private readonly page: Page) {
 
-        // Amazon search input has a stable ID.
         this.searchBox = page.locator('#twotabsearchtextbox');
+
+        this.continueShoppingButton = page.getByRole('button', {
+            name: 'Continue shopping',
+            exact: true
+        });
     }
 
-    // Navigate to Amazon homepage.
     async navigate(url: string): Promise<void> {
 
         console.log(`Navigating to Amazon: ${url}`);
@@ -21,47 +25,28 @@ export class AmazonHomePage {
             timeout: 45000
         });
 
-        try {
+        // Check for Amazon Continue Shopping interstitial.
+        if (
+            await this.continueShoppingButton
+                .isVisible()
+                .catch(() => false)
+        ) {
 
-            // Wait for Amazon search input.
-            await expect(this.searchBox).toBeVisible({
-                timeout: 20000
-            });
+            console.log('Continue Shopping interstitial detected.');
 
-            console.log('Amazon homepage loaded successfully.');
+            await this.continueShoppingButton.click();
+
+            console.log('Continue Shopping button clicked.');
         }
-        catch (error) {
 
-            // Capture page details for debugging.
-            const currentUrl = this.page.url();
-            const pageTitle = await this.page.title();
+        // Wait for Amazon homepage search box.
+        await expect(this.searchBox).toBeVisible({
+            timeout: 20000
+        });
 
-            const pageContent = await this.page.locator('body')
-                .innerText()
-                .catch(() => 'Unable to retrieve page content');
-
-            const diagnosticMessage = `
-Amazon homepage loading failed.
-
-Expected: Amazon search box should be visible.
-
-Actual URL: ${currentUrl}
-
-Page Title: ${pageTitle}
-
-Page Content:
-${pageContent.substring(0, 1500)}
-`;
-
-            console.error(diagnosticMessage);
-
-            throw new Error(
-                `Amazon homepage is not ready. ${diagnosticMessage}`
-            );
-        }
+        console.log('Amazon homepage loaded successfully.');
     }
 
-    // Search for a product.
     async search(
         searchTerm: string,
         suggestionLabel: string
@@ -71,7 +56,6 @@ ${pageContent.substring(0, 1500)}
 
         await this.searchBox.fill(searchTerm);
 
-        // Locate the matching search suggestion.
         const suggestion = this.page.locator(
             `[aria-label="${suggestionLabel}"]`
         );
