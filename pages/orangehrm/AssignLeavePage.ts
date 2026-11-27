@@ -1,4 +1,3 @@
-
 import { expect, Locator, Page } from '@playwright/test';
 
 export class AssignLeavePage {
@@ -15,6 +14,10 @@ export class AssignLeavePage {
     private readonly successToast: Locator;
     private readonly validationErrors: Locator;
     private readonly leaveBalance: Locator;
+
+    // Confirmation popup locators
+    private readonly confirmationDialog: Locator;
+    private readonly confirmationOkButton: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -54,11 +57,16 @@ export class AssignLeavePage {
             })
             .locator('.oxd-select-text');
 
-        // Date fields - two inputs share the same placeholder
-        const dateInputs = page.getByPlaceholder('yyyy-dd-mm');
+        // Locate date fields by label to avoid locale-dependent placeholders
+        this.fromDateInput = page
+            .locator('.oxd-input-group')
+            .filter({ hasText: 'From Date' })
+            .locator('input');
 
-        this.fromDateInput = dateInputs.nth(0);
-        this.toDateInput = dateInputs.nth(1);
+        this.toDateInput = page
+            .locator('.oxd-input-group')
+            .filter({ hasText: 'To Date' })
+            .locator('input');
 
         // Comments
         this.commentsInput = page.locator(
@@ -83,6 +91,17 @@ export class AssignLeavePage {
         this.leaveBalance = page.locator(
             '.orangehrm-leave-balance-text'
         );
+
+        // Confirmation popup
+        this.confirmationDialog = page.locator(
+            'div.oxd-dialog-sheet'
+        );
+
+        // OK button inside confirmation popup
+        this.confirmationOkButton =
+            this.confirmationDialog.locator(
+                'button.oxd-button--secondary'
+            );
     }
 
     async navigateToLeave(): Promise<void> {
@@ -96,6 +115,15 @@ export class AssignLeavePage {
     }
 
     async openAssignLeave(): Promise<void> {
+        if (!(await this.assignLeaveLink.isVisible())) {
+            const moreMenu = this.page
+                .getByRole('navigation', { name: 'Topbar Menu' })
+                .getByText('More', { exact: true });
+
+            await moreMenu.click();
+            await expect(this.assignLeaveLink).toBeVisible();
+        }
+
         await this.assignLeaveLink.click();
 
         await expect(this.pageHeading).toBeVisible();
@@ -104,10 +132,8 @@ export class AssignLeavePage {
     async expectRequiredFieldsVisible(): Promise<void> {
         await expect(this.employeeNameInput).toBeVisible();
         await expect(this.leaveTypeDropdown).toBeVisible();
-
-        await expect(
-            this.page.getByPlaceholder('yyyy-dd-mm')
-        ).toHaveCount(2);
+        await expect(this.fromDateInput).toHaveCount(1);
+        await expect(this.toDateInput).toHaveCount(1);
 
         await expect(this.fromDateInput).toBeVisible();
         await expect(this.toDateInput).toBeVisible();
@@ -147,27 +173,76 @@ export class AssignLeavePage {
         await leaveOption.click();
     }
 
+    private async formatDateForInput(
+        date: string,
+        input: Locator
+    ): Promise<string> {
+        const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+
+        if (!dateMatch) {
+            throw new Error(`Invalid date '${date}'. Expected yyyy-mm-dd.`);
+        }
+
+        const [, year, month, day] = dateMatch;
+
+        if (await input.getAttribute('type') === 'date') {
+            return date;
+        }
+
+        const placeholder = await input.getAttribute('placeholder');
+        const formatMatch = /^(yyyy|mm|dd)([-/.])(yyyy|mm|dd)\2(yyyy|mm|dd)$/i.exec(
+            placeholder ?? ''
+        );
+
+        if (!formatMatch) {
+            throw new Error(
+                `Unsupported date input format '${placeholder ?? 'none'}'.`
+            );
+        }
+
+        const [, first, separator, second, third] = formatMatch;
+        const tokens = [first, second, third].map((token) => token.toLowerCase());
+
+        if (new Set(tokens).size !== 3) {
+            throw new Error(`Invalid date input format '${placeholder}'.`);
+        }
+
+        const dateParts: Record<string, string> = {
+            yyyy: year,
+            mm: month,
+            dd: day
+        };
+
+        return tokens
+            .map((token) => dateParts[token])
+            .join(separator);
+    }
+
     async enterLeaveDates(
         fromDate: string,
         toDate: string
     ): Promise<void> {
-        // Confirm that the two locators point to separate fields
-        await expect(this.fromDateInput).not.toHaveValue(toDate);
+        const formattedFromDate = await this.formatDateForInput(
+            fromDate,
+            this.fromDateInput
+        );
+        const formattedToDate = await this.formatDateForInput(
+            toDate,
+            this.toDateInput
+        );
 
-        // Fill From Date
-        await this.fromDateInput.fill(fromDate);
+        await this.fromDateInput.fill(formattedFromDate);
         await this.fromDateInput.press('Tab');
 
         await expect(this.fromDateInput).toHaveValue(
-            fromDate
+            formattedFromDate
         );
 
-        // Fill To Date
-        await this.toDateInput.fill(toDate);
+        await this.toDateInput.fill(formattedToDate);
         await this.toDateInput.press('Tab');
 
         await expect(this.toDateInput).toHaveValue(
-            toDate
+            formattedToDate
         );
     }
 
@@ -183,7 +258,6 @@ export class AssignLeavePage {
         toDate: string;
         comments?: string;
     }): Promise<void> {
-
         await this.enterEmployeeName(
             data.employeeSearchText,
             data.employeeName
@@ -213,8 +287,39 @@ export class AssignLeavePage {
         }
     }
 
-    async submitForm(): Promise<void> {
+    // Submit Assign Leave and handle confirmation popup
+    async submitForm(): Promise<string> {
+        // Click Assign
         await this.assignButton.click();
+
+        // Wait for confirmation popup
+        await expect(this.confirmationDialog).toBeVisible({
+            timeout: 15000
+        });
+
+        // Validate popup title
+        await expect(this.confirmationDialog).toContainText(
+            'Confirm Leave Assignment'
+        );
+
+        // Validate popup message
+        await expect(this.confirmationDialog).toContainText(
+            'Employee does not have sufficient leave balance'
+        );
+
+        // Verify OK button
+        await expect(this.confirmationOkButton).toBeVisible();
+        await expect(this.confirmationOkButton).toBeEnabled();
+
+        // Click OK
+        await this.confirmationOkButton.click();
+
+        // Verify popup is closed
+        await expect(this.confirmationDialog).toBeHidden({
+            timeout: 10000
+        });
+
+        return 'Confirmation popup verified. OK button clicked and popup closed successfully.';
     }
 
     async expectAssignmentSucceeded(): Promise<void> {

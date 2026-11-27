@@ -50,3 +50,5 @@ organization-safe-validation-report/
 organization-general-information-report/
 pom-login-report/
 .vs/
+test-results/
+playwright-report/

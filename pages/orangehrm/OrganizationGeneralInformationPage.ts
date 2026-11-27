@@ -1,5 +1,5 @@
 import { expect, Locator, Page } from '@playwright/test';
-import { OrganizationGeneralInformationData } from '../test-data/organizationData';
+import { OrganizationGeneralInformationData } from '../../test-data/orangehrm/organizationData';
 
 export class OrganizationGeneralInformationPage {
   private readonly pageHeading: Locator;
@@ -78,7 +78,10 @@ export class OrganizationGeneralInformationPage {
   async updateFields(
     values: OrganizationGeneralInformationData
   ): Promise<void> {
-    for (const [fieldName, value] of Object.entries(values)) {
+    for (const fieldName of Object.keys(values) as Array<
+      keyof OrganizationGeneralInformationData
+    >) {
+      const value = values[fieldName];
       if (fieldName === 'Country') {
         await this.selectDropdownValue(fieldName, value);
       } else {

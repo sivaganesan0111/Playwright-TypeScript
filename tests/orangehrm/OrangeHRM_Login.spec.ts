@@ -1,6 +1,6 @@
-import { test } from '../fixtures/testFixtures';
-import { loginData, personalDetailsData } from '../test-data/loginData';
-import { ScreenshotUtil } from '../utils/ScreenshotUtil';
+import { test } from '../../fixtures/orangehrmFixtures';
+import { loginData, personalDetailsData } from '../../test-data/orangehrm/loginData';
+import { ScreenshotUtil } from '../../utils/ScreenshotUtil';
 
 const loginUrl =
   'https://opensource-demo.orangehrmlive.com/web/index.php/auth/login';

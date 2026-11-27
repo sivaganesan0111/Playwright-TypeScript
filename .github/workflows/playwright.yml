@@ -1,19 +1,20 @@
 
-name: Playwright Automation
+name: Playwright Automation CI
 
 on:
   push:
     branches: [main]
-
   pull_request:
     branches: [main]
-
   workflow_dispatch:
 
 jobs:
-  playwright-tests:
-    timeout-minutes: 30
+  test:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: playwright-typescript
 
     steps:
       - name: Checkout repository
@@ -24,6 +25,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: playwright-typescript/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -39,7 +41,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-html-report
-          path: playwright-report/
+          path: playwright-typescript/playwright-report/
           retention-days: 14
 
       - name: Upload test results
@@ -47,5 +49,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results
-          path: test-results/
+          path: playwright-typescript/test-results/
           retention-days: 14

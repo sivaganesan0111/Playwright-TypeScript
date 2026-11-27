@@ -1,10 +1,10 @@
 
-import { test, expect } from '../fixtures/testFixtures';
+import { test, expect } from '../../fixtures/orangehrmFixtures';
 
-import { loginData } from '../test-data/loginData';
-import { organizationData } from '../test-data/organizationData';
+import { loginData } from '../../test-data/orangehrm/loginData';
+import { organizationData } from '../../test-data/orangehrm/organizationData';
 
-import { ScreenshotUtil } from '../utils/ScreenshotUtil';
+import { ScreenshotUtil } from '../../utils/ScreenshotUtil';
 
 const loginUrl =
     'https://opensource-demo.orangehrmlive.com/web/index.php/auth/login';

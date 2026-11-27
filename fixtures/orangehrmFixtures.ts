@@ -1,9 +1,9 @@
 import { test as base, expect } from '@playwright/test';
-import { AdminPage } from '../pages/AdminPage';
-import { DashboardPage } from '../pages/DashboardPage';
-import { LoginPage } from '../pages/LoginPage';
-import { OrganizationGeneralInformationPage } from '../pages/OrganizationGeneralInformationPage';
-import { PersonalDetailsPage } from '../pages/PersonalDetailsPage';
+import { AdminPage } from '../pages/orangehrm/AdminPage';
+import { DashboardPage } from '../pages/orangehrm/DashboardPage';
+import { LoginPage } from '../pages/orangehrm/LoginPage';
+import { OrganizationGeneralInformationPage } from '../pages/orangehrm/OrganizationGeneralInformationPage';
+import { PersonalDetailsPage } from '../pages/orangehrm/PersonalDetailsPage';
 import { ScreenshotUtil } from '../utils/ScreenshotUtil';
 import { TestLogger } from '../utils/TestLogger';
 
