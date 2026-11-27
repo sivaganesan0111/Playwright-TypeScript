@@ -27,25 +27,31 @@ export default defineConfig({
         }]
     ],
 
+
     use: {
 
-        // Use Google Chrome locally and in GitHub Actions.
+        // Use Google Chrome
         channel: 'chrome',
 
-        // Headed locally, headless in CI.
+        // Headed locally, headless in CI
         headless: !!process.env.CI,
 
-        // Keep viewport consistent across environments.
-        viewport: {
-            width: 1366,
-            height: 768
+        // Use actual browser window size
+        viewport: null,
+
+        // Start Chrome maximized
+        launchOptions: {
+            args: ['--start-maximized']
         },
 
+        // Screenshot configuration
         screenshot: 'on',
 
+        // Trace configuration
         trace: 'retain-on-failure',
 
     },
+
 
     projects: [
         {
